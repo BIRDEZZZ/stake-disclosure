@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stake.com Email Leak Disclosure</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 850px;
+      margin: auto;
+    }
+
+    h1, h2, h3 {
+      color: #ff4d4d;
+    }
+
+    p {
+      margin: 1rem 0;
+    }
+
+    ul {
+      margin-top: 0.5rem;
+      padding-left: 1.5rem;
+    }
+
+    code {
+      background: #1f1f1f;
+      color: #00e0ff;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+    }
+
+    pre {
+      background: #1f1f1f;
+      color: #d4f1ff;
+      padding: 1.2rem;
+      border-left: 4px solid #ff4d4d;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 1.5rem 0;
+    }
+
+    a {
+      color: #5ec9ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Stake.com Email Leak Disclosure</h1>
+
+  <h2>Hey all!</h2>
+  <p>
+    Today I wanted to share details about a serious vulnerability I discovered in Stake’s GraphQL API a couple days ago that exposed user email addresses.
+  </p>
+
+  <hr/>
+
+  <h3>What was it?</h3>
+  <p>
+    The <code>UserEmailMeta</code> query in the GraphQL endpoint allowed <strong>any authenticated session</strong> to fetch the email address tied to <strong>any username</strong>.
+  </p>
+
+  <h3>What it did?</h3>
+  <p>
+    This meant attackers could retrieve either <strong>partial or full emails</strong> for any user without their consent or any additional verifications.
+  </p>
+
+  <h3>Consequences?</h3>
+  <ul>
+    <li>Targeted phishing attacks</li>
+    <li>Account takeover attempts</li>
+    <li>Violation of user privacy</li>
+    <li>Public data leaked</li>
+  </ul>
+
+  <h3>How was it done?</h3>
+  <p>By sending a POST request to <code>https://stake.com/_api/graphql</code> with the following query:</p>
+  <pre>{
+  "query": "query UserEmailMeta($name: String!) { user(name: $name) { email } }",
+  "variables": { "name": "ExampleUser" }
+}</pre>
+
+  <p>Output:</p>
+  <pre>{ "data": { "user": { "email": "ExampleEmail@gmail.com" } } }</pre>
+
+  <p><strong>Note:</strong> It would show partial emails depending on the email returned, such as <code>"ExampleE****@gmail.com"</code>.</p>
+
+  <h3>The patch?</h3>
+  <p>
+    Stake fixed the issue by masking email addresses in the response. Now, when querying the same endpoint, you get a fully obfuscated email like this:
+  </p>
+  <pre>{ "data": { "user": { "email": "**********" } } }</pre>
+
+  <p>
+    Stake has thankfully addressed and patched the exploit promptly. However, I recommend that users consider changing their account email addresses as a safety measure.
+  </p>
+
+  <p>
+    Here’s a test script for others to check the exploit. Update <code>cookie</code>, <code>user-agent</code>, and <code>x-access-token</code>, and use <code>UserEmailMeta</code> for <code>x-operation-name</code> to verify the patch.
+  </p>
+
+  <p><strong>Code:</strong> <a href="https://pastebin.com/hjMeQZ4q" target="_blank">https://pastebin.com/hjMeQZ4q</a></p>
+  <p><strong>Note:</strong> Make sure the values are from <code>UserEmailMeta</code></p>
+
+  <hr/>
+
+  <p>
+    Looking forward to publishing more patched exploits!
+  </p>
+  <p>
+    Feel free to message <strong>@heyheybird</strong> on Telegram for any concerns, updates or information.
+  </p>
+
+  <p>Have a great day and stay safe.</p>
+
+</body>
+</html>
